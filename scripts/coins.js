@@ -30,7 +30,8 @@ export default class Coins {
                         h: this.h,
                         w: this.w
                     });
-                } else if (layout[y][x] === 3) {
+                } 
+                else if (layout[y][x] === 3) {
                     this.powers.push({
                         x: x * this.w,
                         y: y * this.h,

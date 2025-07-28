@@ -15,7 +15,7 @@ let ghostArr = [];
 let animationFrameId;
 let isBeatableGhost = false;
 let wonScreen, gameOverScreen;
-let assets; // Make assets globally accessible
+let assets;
 
 async function init() {
     wonScreen = document.getElementById('you_won');
@@ -66,7 +66,8 @@ async function loadAssets() {
             loadedAssets[asset.name] = loadedImages[i];
         });
         return loadedAssets;
-    } catch (error) {
+    }
+    catch (error) {
         console.error("Failed to load assets:", error);
         return null;
     }
@@ -96,9 +97,10 @@ function checkGhostCollision() {
     for (let i = ghostArr.length - 1; i >= 0; i--) {
         const ghost = ghostArr[i];
         if (pacMan.isCollidingFromCenter(ghost)) {
-            if (isBeatableGhost) {
+            if(isBeatableGhost) {
                 ghostArr.splice(i, 1);
-            } else {
+            } 
+            else{
                 gameOver();
             }
         }
@@ -115,25 +117,23 @@ function gameLoop(currentTime) {
     const deltaTime = currentTime - lastUpdateTime;
     const interval = 4000 / FRAME_RATE;
 
-    if (deltaTime > interval) {
+    if(deltaTime > interval) {
         pacMan.updateMovement(walls.mazeLayout);
         pacMan.collectCoin(walls, coins.coins);
-        if (pacMan.collectPower(walls, coins.powers) && !isBeatableGhost) {
+        if(pacMan.collectPower(walls, coins.powers) && !isBeatableGhost) {
             isBeatableGhost = true;
-            // FIXED: Swap to the pre-loaded vulnerable ghost image
             ghostArr.forEach(ghost => {
                 ghost.image = assets.vulnerable_ghost;
             });
             setTimeout(() => {
                 isBeatableGhost = false;
-                // FIXED: Swap back to the pre-loaded normal ghost image
                 ghostArr.forEach(ghost => {
                     ghost.image = assets.ghost;
                 });
             }, 5000);
         }
 
-        if (coins.coins.length === 0) {
+        if(coins.coins.length === 0) {
             wonScreen.style.display = 'flex';
             cancelAnimationFrame(animationFrameId);
             return;
