@@ -15,11 +15,13 @@ let ghostArr = [];
 let animationFrameId;
 let isBeatableGhost = false;
 let won;
+let assets = {};
 function init() {
     loadSprites();
     keyBindings();
     prepareCanvas();
     gameLoop();
+    loadAssets();
 }
 
 function keyBindings() {
@@ -31,6 +33,31 @@ function keyBindings() {
     });
 }
 
+function loadAssets() {
+    const assetList = [
+        { name: 'wall', src: '../assets/images/wall.png' },
+        { name: 'pacman0', src: '../assets/images/pac0.png' },
+        { name: 'pacman1', src: '../assets/images/pac1.png' },
+        { name: 'pacman2', src: '../assets/images/pac2.png' },
+        { name: 'ghost', src: '../assets/images/ghost.png' },
+        { name: 'coin', src: '../assets/images/yellowDot.png' },
+        { name: 'power', src: '../assets/images/pinkDot.png' },
+        { name: 'vulnerable_ghost', src: '../assets/images/vulnerable_ghost.png'}
+    ];
+    let loadedCount = 0;
+
+    assetList.forEach(asset => {
+        const img = new Image();
+        img.src = asset.src;
+        img.onload = () => {
+            loadedCount++;
+            assets[asset.name] = img;
+            if (loadedCount === assetList.length) {
+                initGame();
+            }
+        };
+    });
+}
 function loadSprites() {
     won = document.getElementById('you_won');
     walls = new Walls();
