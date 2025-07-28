@@ -14,14 +14,19 @@ let lastUpdateTime = 0;
 let ghostArr = [];
 let animationFrameId;
 let isBeatableGhost = false;
-let won;
-let assets = {};
-function init() {
-    loadSprites();
-    keyBindings();
-    prepareCanvas();
-    gameLoop();
-    loadAssets();
+let wonScreen, gameOverScreen;
+let assets; // Make assets globally accessible
+
+async function init() {
+    wonScreen = document.getElementById('you_won');
+    gameOverScreen = document.getElementById('game_over');
+    assets = await loadAssets();
+    if (assets) {
+        loadSprites(assets);
+        keyBindings();
+        prepareCanvas();
+        gameLoop();
+    }
 }
 
 function keyBindings() {
@@ -33,40 +38,50 @@ function keyBindings() {
     });
 }
 
-function loadAssets() {
-    const assetList = [
-        { name: 'wall', src: '../assets/images/wall.png' },
-        { name: 'pacman0', src: '../assets/images/pac0.png' },
-        { name: 'pacman1', src: '../assets/images/pac1.png' },
-        { name: 'pacman2', src: '../assets/images/pac2.png' },
-        { name: 'ghost', src: '../assets/images/ghost.png' },
-        { name: 'coin', src: '../assets/images/yellowDot.png' },
-        { name: 'power', src: '../assets/images/pinkDot.png' },
-        { name: 'vulnerable_ghost', src: '../assets/images/vulnerable_ghost.png'}
-    ];
-    let loadedCount = 0;
-
-    assetList.forEach(asset => {
+function loadImage(src) {
+    return new Promise((resolve, reject) => {
         const img = new Image();
-        img.src = asset.src;
-        img.onload = () => {
-            loadedCount++;
-            assets[asset.name] = img;
-            if (loadedCount === assetList.length) {
-                initGame();
-            }
-        };
+        img.onload = () => resolve(img);
+        img.onerror = reject;
+        img.src = src;
     });
 }
-function loadSprites() {
-    won = document.getElementById('you_won');
-    walls = new Walls();
-    coins = new Coins(walls.mazeLayout);
-    pacMan = new Pacman(TILE_SIZE * 1, TILE_SIZE * 1);
 
-    ghost1 = new ghosts('../assets/images/ghost.png', TILE_SIZE * 16, TILE_SIZE * 1, TILE_SIZE, TILE_SIZE);
-    ghost2 = new ghosts('../assets/images/ghost.png', TILE_SIZE * 1, TILE_SIZE * 11, TILE_SIZE, TILE_SIZE);
-    ghost3 = new ghosts('../assets/images/ghost.png', TILE_SIZE * 16, TILE_SIZE * 11, TILE_SIZE, TILE_SIZE);
+async function loadAssets() {
+    const assetList = [
+        { name: 'wall', src: './assets/images/wall.png' },
+        { name: 'pacman0', src: './assets/images/pac0.png' },
+        { name: 'pacman1', src: './assets/images/pac1.png' },
+        { name: 'pacman2', src: './assets/images/pac2.png' },
+        { name: 'ghost', src: './assets/images/ghost.png' },
+        { name: 'vulnerable_ghost', src: './assets/images/scaredGhost.png' },
+        { name: 'coin', src: './assets/images/yellowDot.png' },
+        { name: 'power', src: './assets/images/pinkDot.png' }
+    ];
+    const loadedAssets = {};
+    try {
+        const promises = assetList.map(asset => loadImage(asset.src));
+        const loadedImages = await Promise.all(promises);
+        assetList.forEach((asset, i) => {
+            loadedAssets[asset.name] = loadedImages[i];
+        });
+        return loadedAssets;
+    } catch (error) {
+        console.error("Failed to load assets:", error);
+        return null;
+    }
+}
+
+function loadSprites(assets) {
+    walls = new Walls(assets.wall);
+    coins = new Coins(walls.mazeLayout, assets.coin, assets.power);
+
+    const pacmanImages = [assets.pacman0, assets.pacman1, assets.pacman2];
+    pacMan = new Pacman(TILE_SIZE * 1, TILE_SIZE * 1, pacmanImages);
+
+    ghost1 = new ghosts(assets.ghost, TILE_SIZE * 16, TILE_SIZE * 1, TILE_SIZE, TILE_SIZE);
+    ghost2 = new ghosts(assets.ghost, TILE_SIZE * 1, TILE_SIZE * 11, TILE_SIZE, TILE_SIZE);
+    ghost3 = new ghosts(assets.ghost, TILE_SIZE * 16, TILE_SIZE * 11, TILE_SIZE, TILE_SIZE);
     ghostArr = [ghost1, ghost2, ghost3];
 }
 
@@ -74,7 +89,6 @@ function prepareCanvas() {
     const canvas = document.getElementById('gameCanvas');
     canvas.width = GAME_WIDTH;
     canvas.height = GAME_HEIGHT;
-    canvas.style.border = '1px solid white';
     context = canvas.getContext('2d');
 }
 
@@ -84,10 +98,7 @@ function checkGhostCollision() {
         if (pacMan.isCollidingFromCenter(ghost)) {
             if (isBeatableGhost) {
                 ghostArr.splice(i, 1);
-            }
-            else {
-                const go = document.getElementById('game_over');
-                go.style.display = 'flex'
+            } else {
                 gameOver();
             }
         }
@@ -95,41 +106,44 @@ function checkGhostCollision() {
 }
 
 function gameOver() {
-    console.log("Game Over");
+    gameOverScreen.style.display = 'flex';
     cancelAnimationFrame(animationFrameId);
 }
 
 function gameLoop(currentTime) {
     animationFrameId = requestAnimationFrame(gameLoop);
-
     const deltaTime = currentTime - lastUpdateTime;
     const interval = 4000 / FRAME_RATE;
 
     if (deltaTime > interval) {
         pacMan.updateMovement(walls.mazeLayout);
-        pacMan.collectCoin(walls, coins.coins, won);
+        pacMan.collectCoin(walls, coins.coins);
         if (pacMan.collectPower(walls, coins.powers) && !isBeatableGhost) {
             isBeatableGhost = true;
+            // FIXED: Swap to the pre-loaded vulnerable ghost image
             ghostArr.forEach(ghost => {
-                ghost.image.src = '../assets/images/scaredGhost.png';
+                ghost.image = assets.vulnerable_ghost;
             });
             setTimeout(() => {
                 isBeatableGhost = false;
+                // FIXED: Swap back to the pre-loaded normal ghost image
                 ghostArr.forEach(ghost => {
-                    ghost.image.src = '../assets/images/ghost.png';
+                    ghost.image = assets.ghost;
                 });
             }, 5000);
+        }
+
+        if (coins.coins.length === 0) {
+            wonScreen.style.display = 'flex';
+            cancelAnimationFrame(animationFrameId);
+            return;
         }
 
         checkGhostCollision();
         ghostArr.forEach(ghost => ghost.updateMovement(walls.mazeLayout));
         lastUpdateTime = currentTime - (deltaTime % interval);
-        
     }
-    if (coins.coins.length == 0) {
-        won.style.display = 'flex';
-        cancelAnimationFrame(animationFrameId);
-    }
+
     context.clearRect(0, 0, GAME_WIDTH, GAME_HEIGHT);
     walls.draw(context);
     coins.draw(context);

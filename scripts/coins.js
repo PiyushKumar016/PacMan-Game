@@ -1,11 +1,11 @@
+import { TILE_SIZE } from "./config.js";
+
 export default class Coins {
-    constructor(mazeLayout){
-        this.h = 32;
-        this.w = 32;
-        this.image = new Image();
-        this.image.src = "../assets/images/yellowDot.png";
-        this.image2 = new Image();
-        this.image2.src = "../assets/images/pinkDot.png";
+    constructor(mazeLayout, coinImage, powerImage) {
+        this.h = TILE_SIZE;
+        this.w = TILE_SIZE;
+        this.image = coinImage;
+        this.image2 = powerImage;
         this.coins = [];
         this.powers = [];
         this.createCoins(mazeLayout);
@@ -20,8 +20,8 @@ export default class Coins {
         }
     }
 
-    createCoins(layout){
-        for(let y = 0; y < layout.length; y++) {
+    createCoins(layout) {
+        for (let y = 0; y < layout.length; y++) {
             for (let x = 0; x < layout[y].length; x++) {
                 if (layout[y][x] === 0) {
                     this.coins.push({
@@ -30,8 +30,7 @@ export default class Coins {
                         h: this.h,
                         w: this.w
                     });
-                }
-                if (layout[y][x] === 3) {
+                } else if (layout[y][x] === 3) {
                     this.powers.push({
                         x: x * this.w,
                         y: y * this.h,

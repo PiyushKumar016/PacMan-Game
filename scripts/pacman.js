@@ -1,14 +1,13 @@
 import { SPEED, TILE_SIZE } from "./config.js";
 
 export default class Pacman {
-    constructor(x, y) {
+    constructor(x, y, images) {
         this.x = x;
         this.y = y;
-        this.h = 32;
-        this.w = 32;
-        this.image = new Image();
-        this.imagesArray = ['../assets/images/pac0.png', '../assets/images/pac1.png', '../assets/images/pac2.png'];
-        this.image.src = this.imagesArray[0];
+        this.h = TILE_SIZE;
+        this.w = TILE_SIZE;
+        this.imagesArray = images;
+        this.image = this.imagesArray[0];
         this.index = 0;
         this.delay = 0;
         this.currentDirection = null;
@@ -27,22 +26,22 @@ export default class Pacman {
         context.rotate(angle);
         context.drawImage(this.image, -this.w / 2, -this.h / 2, this.w, this.h);
         context.restore();
-        this.motion();
     }
 
     motion() {
         this.delay++;
-        if(this.delay >= 20) {
+        if (this.delay >= 3) {
             this.delay = 0;
             this.index++;
-            if(this.index >= this.imagesArray.length) {
+            if (this.index >= this.imagesArray.length) {
                 this.index = 0;
             }
-            this.image.src = this.imagesArray[this.index];
+            this.image = this.imagesArray[this.index];
         }
     }
 
     updateMovement(mazeLayout) {
+        this.motion();
         if (this.currentDirection !== null) {
             this.lastDirection = this.currentDirection;
         }
@@ -79,6 +78,7 @@ export default class Pacman {
     }
 
     isWall(x, y, mazeLayout) {
+        if (!mazeLayout) return true;
         const gridX = Math.floor(x / TILE_SIZE);
         const gridY = Math.floor(y / TILE_SIZE);
         const numRows = mazeLayout.length;
@@ -94,12 +94,9 @@ export default class Pacman {
         for (let i = coinsArray.length - 1; i >= 0; i--) {
             const coin = coinsArray[i];
             if (this.isCollidingFromCenter(coin)) {
-                wall.mazeLayout[Math.floor(this.y / 32)][Math.floor(this.x / 32)] = 2;
+                wall.mazeLayout[Math.floor(coin.y / TILE_SIZE)][Math.floor(coin.x / TILE_SIZE)] = 2;
                 coinsArray.splice(i, 1);
                 break;
-            }
-            if(coinsArray.length === 0){
-                
             }
         }
     }
@@ -117,7 +114,7 @@ export default class Pacman {
         for (let i = powerArray.length - 1; i >= 0; i--) {
             const power = powerArray[i];
             if (this.isCollidingFromCenter(power)) {
-                wall.mazeLayout[Math.floor(this.y / 32)][Math.floor(this.x / 32)] = 2;
+                wall.mazeLayout[Math.floor(power.y / TILE_SIZE)][Math.floor(power.x / TILE_SIZE)] = 2;
                 powerArray.splice(i, 1);
                 return true;
             }
