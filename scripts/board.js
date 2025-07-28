@@ -26,15 +26,24 @@ async function init() {
         keyBindings();
         prepareCanvas();
         gameLoop();
+        bindEvents();
     }
 }
-
+function bindEvents() {
+    document.getElementById('play_again_gameover').addEventListener('click', () => {
+        window.location.reload();
+    });
+    document.getElementById('play_again_youwon').addEventListener('click', () => {
+        window.location.reload();
+    });
+}
 function keyBindings() {
     window.addEventListener('keydown', (e) => {
         if (e.key === 'ArrowUp') pacMan.nextDirection = 'up';
         else if (e.key === 'ArrowDown') pacMan.nextDirection = 'down';
         else if (e.key === 'ArrowLeft') pacMan.nextDirection = 'left';
         else if (e.key === 'ArrowRight') pacMan.nextDirection = 'right';
+        else if (e.key === 'Enter')window.location.reload();
     });
 }
 
@@ -97,10 +106,10 @@ function checkGhostCollision() {
     for (let i = ghostArr.length - 1; i >= 0; i--) {
         const ghost = ghostArr[i];
         if (pacMan.isCollidingFromCenter(ghost)) {
-            if(isBeatableGhost) {
+            if (isBeatableGhost) {
                 ghostArr.splice(i, 1);
-            } 
-            else{
+            }
+            else {
                 gameOver();
             }
         }
@@ -117,10 +126,10 @@ function gameLoop(currentTime) {
     const deltaTime = currentTime - lastUpdateTime;
     const interval = 4000 / FRAME_RATE;
 
-    if(deltaTime > interval) {
+    if (deltaTime > interval) {
         pacMan.updateMovement(walls.mazeLayout);
         pacMan.collectCoin(walls, coins.coins);
-        if(pacMan.collectPower(walls, coins.powers) && !isBeatableGhost) {
+        if (pacMan.collectPower(walls, coins.powers) && !isBeatableGhost) {
             isBeatableGhost = true;
             ghostArr.forEach(ghost => {
                 ghost.image = assets.vulnerable_ghost;
@@ -133,7 +142,7 @@ function gameLoop(currentTime) {
             }, 5000);
         }
 
-        if(coins.coins.length === 0) {
+        if (coins.coins.length === 0) {
             wonScreen.style.display = 'flex';
             cancelAnimationFrame(animationFrameId);
             return;
